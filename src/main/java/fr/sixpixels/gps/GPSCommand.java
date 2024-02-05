@@ -30,13 +30,13 @@ public class GPSCommand implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
 
-        if (commandSender instanceof Player && args.length == 0) {
+        if (commandSender instanceof Player && args.length == 0 && commandSender.hasPermission("gps.use")) {
             Player p = (Player) commandSender;
             this.openMainMenu(p);
             return true;
         }
 
-        if (commandSender instanceof Player) {
+        if (commandSender instanceof Player&& commandSender.hasPermission("gps.admin")) {
             Player p = (Player) commandSender;
 
             if (args[0].equalsIgnoreCase("delete")) {
