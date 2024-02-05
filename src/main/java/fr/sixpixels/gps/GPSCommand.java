@@ -3,12 +3,11 @@ package fr.sixpixels.gps;
 import com.samjakob.spigui.buttons.SGButton;
 import com.samjakob.spigui.item.ItemBuilder;
 import com.samjakob.spigui.menu.SGMenu;
-import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.*;
-
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -18,9 +17,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Set;
-import java.util.UUID;
+import java.util.logging.Level;
 
 public class GPSCommand implements CommandExecutor {
     GPS plugin;
@@ -30,11 +28,32 @@ public class GPSCommand implements CommandExecutor {
         this.plugin = plugin;
     }
     @Override
-    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
+    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
+
+        if (commandSender instanceof Player && args.length == 0) {
+            Player p = (Player) commandSender;
+            this.openMainMenu(p);
+            return true;
+        }
 
         if (commandSender instanceof Player) {
             Player p = (Player) commandSender;
-            this.openMainMenu(p);
+
+            if (args[0].equalsIgnoreCase("delete")) {
+                if (args.length < 2) {
+                    commandSender.sendMessage(TextComponent.fromLegacyText(this.plugin.getConfig().getString("prefix") + "&r&7 usage &a/gps delete <quest>"));
+                    return false;
+                }
+                this.plugin.removeDestination(p, args[1]);
+                return true;
+            } else if (args[0].equalsIgnoreCase("add")) {
+                if (args.length < 2) {
+                    commandSender.sendMessage(TextComponent.fromLegacyText(this.plugin.getConfig().getString("prefix") + "&r&7 usage &a/gps add <quest> [material] [description]"));
+                    return false;
+                }
+                this.plugin.createDestination(p, args);
+                return true;
+            }
         }
 
         return false;
@@ -43,6 +62,7 @@ public class GPSCommand implements CommandExecutor {
     private void openMainMenu(Player player) {
 
         // Create a GUI with 3 rows (27 slots)
+        Bukkit.getLogger().log(Level.FINER, "[GPS] Opening menu " + t("MAIN_MENU_TITLE"));
         SGMenu mainMenu = GPS.GUI.create(t("MAIN_MENU_TITLE"), 3);
 
         ConfigurationSection destinations = this.plugin.getConfig().getConfigurationSection("destinations");
@@ -69,7 +89,6 @@ public class GPSCommand implements CommandExecutor {
                     lore.add(t("GO_TO_WORLD") + " &3&l" + dest.getString("world_desc"));
                 }
 
-
                 SGButton btn = new SGButton(
                         new ItemBuilder(material)
                                 .name(name)
@@ -87,16 +106,18 @@ public class GPSCommand implements CommandExecutor {
                         } else {
                             event.getWhoClicked().sendMessage(t("DEFAULT_MESSAGE_START"));
                         }
+                        Bukkit.getLogger().info("[GPS] " + player.getName() + " set GPS to " + dest.getString("name"));
                         // trigger GPS
                         // get destination point
+                        String destName = dest.getString("name");
                         Location loc = new Location(player.getWorld(), (float)dest.getInt("x"), (float)dest.getInt("y"), (float)dest.getInt("z"));
-                        LocationFinder finder = new LocationFinder(player, loc, dest.getString("name"), this.plugin);
+                        LocationFinder finder = new LocationFinder(player, loc, destName, this.plugin);
                         this.plugin.finders.put(player.getUniqueId(), finder);
                         // create bossbar
                         finder.addBossbar();
 
                         finder.actionBarTask = Bukkit.getScheduler().runTaskTimer(this.plugin, () -> {
-                            String message = "Direction: §6§l" + finder.destinationName;
+                            String message = "Direction: §6§l" + destName;
                             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(message));
                         }, 0, 20L*2);
 

@@ -1,4 +1,5 @@
-language: fr_FR
+language: 'fr_FR'
+prefix: '[GPS] '
 destinations:
   quests:
     x: 70

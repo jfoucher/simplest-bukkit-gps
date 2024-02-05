@@ -53,10 +53,9 @@ public class LocationFinder {
         Location ploc = player.getLocation();
         // direction the player is pointing towards
         Vector direction = ploc.getDirection();
-        player.sendMessage("dir " + direction);
         // Get direction from player location to destination
         Vector heading = this.destination.toVector().subtract(ploc.toVector());
-        player.sendMessage("heading " + heading);
+
         String posChar = "⬤";
         if (heading.getBlockY() > 0) {
             posChar = "↑";
@@ -68,13 +67,6 @@ public class LocationFinder {
         heading.setY(0);
         direction.setY(0);
 
-
-
-
-//        dot = x1*x2 + y1*y2      # Dot product between [x1, y1] and [x2, y2]
-//        det = x1*y2 - y1*x2      # Determinant
-//        angle = atan2(det, dot)  # atan2(y, x) or atan2(sin, cos)
-
         Vector a = this.destination.toVector().subtract(ploc.toVector()).normalize();
         Vector b = ploc.getDirection();
         double dot = a.dot(b);
@@ -83,8 +75,6 @@ public class LocationFinder {
         angle = Math.toDegrees(-angle);
         //double angle = heading.angle(direction) * 180 / Math.PI;
         int charpos = (int) Math.round(angle / 4.0 + 45.0/2.0);
-        player.sendMessage("Angle " + angle);
-        player.sendMessage("charpos " + charpos);
         if (charpos > 45) {
             posChar = "→";
             charpos=45;
@@ -98,8 +88,6 @@ public class LocationFinder {
         Component t = Component.text(new String(new char[charpos]).replace("\0", "—"), TextColor.color(0xCCCCCC));
         t = t.append(Component.text(posChar).style(Style.style(TextColor.color(0xFF2233), TextDecoration.BOLD)));
         t= t.append(Component.text(new String(new char[45-charpos]).replace("\0", "—"), TextColor.color(0xCCCCCC)));
-
-        player.sendMessage(t);
         return t;
     }
 
@@ -109,13 +97,15 @@ public class LocationFinder {
             return 0.0f;
         }
         double dist = player.getLocation().distance(this.destination);
-        if (dist < 1) {
-            this.actionBarTask.cancel();
-            this.plugin.arrived(player);
+        if (dist < 2) {
+            if (this.actionBarTask != null) {
+                this.actionBarTask.cancel();
+            }
 
+            player.hideBossBar(this.bar);
+            this.plugin.arrived(player);
         }
         float p = (float)dist / (float)orig;
-        player.sendMessage("progress is " + p);
         if (p < 0.1f) {
             return 0.0f;
         }
