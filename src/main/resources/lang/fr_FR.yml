@@ -1,0 +1,6 @@
+MAIN_MENU_TITLE: Où voulez-vous aller aujourd'hui ?
+DEFAULT_MESSAGE_START: C'est parti !
+WRONG_WORLD_MESSAGE: Vous êtes dans le mauvais monde, vous devez aller dans le monde "%world%" puis relancer le GPS.
+WORLD_COLON: 'monde :'
+GO_TO_WORLD: Allez déjà dans le monde
+ARRIVED_DESTINATION: Vous êtes arrivé à &a&l%destination%

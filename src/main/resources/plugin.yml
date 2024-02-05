@@ -1,0 +1,9 @@
+name: GPS
+version: '${project.version}'
+main: fr.sixpixels.gps.GPS
+api-version: '1.20'
+
+commands:
+  gps:
+    description: Permet de choisir une destination
+    usage: /<command>

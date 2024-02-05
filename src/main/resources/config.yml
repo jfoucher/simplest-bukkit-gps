@@ -1,0 +1,24 @@
+language: fr_FR
+destinations:
+  quests:
+    x: 70
+    y: 80
+    z: 70
+    world: lobby
+    world_desc: Spawn
+    material: CROSSBOW
+    name: Quêtes
+    description: Les quêtes journalières sont ici
+    message_start: Allons trouver une nouvelle quête
+    message_end: Vous êtes à destination. Parlez au PNJ pour voir vos quêtes
+
+
+  base:
+    x: 0
+    y: 50
+    z: 0
+    world: survie3
+    world_desc: Vallée paisible
+    material: JUNGLE_PLANKS
+    name: spawn vallée
+    description: LA vallée paisible
