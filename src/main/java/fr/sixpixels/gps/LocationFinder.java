@@ -33,6 +33,7 @@ public class LocationFinder {
         this.destination = loc;
         this.destinationName = name;
         this.start = player.getLocation();
+        this.bar = BossBar.bossBar(Component.text(""), 1.0f, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
     }
 
     public void addBossbar() {

@@ -36,7 +36,7 @@ public class GPSCommand implements CommandExecutor {
             return true;
         }
 
-        if (commandSender instanceof Player&& commandSender.hasPermission("gps.admin")) {
+        if (commandSender instanceof Player && commandSender.hasPermission("gps.admin")) {
             Player p = (Player) commandSender;
 
             if (args[0].equalsIgnoreCase("delete")) {
@@ -53,13 +53,13 @@ public class GPSCommand implements CommandExecutor {
                 }
                 this.plugin.createDestination(p, args);
                 return true;
+            } else if (args[0].equalsIgnoreCase("list")) {
+                this.plugin.listDestinations(commandSender);
+                return true;
             }
         }
 
-        if (args[0].equalsIgnoreCase("list")) {
-            this.plugin.listDestinations(commandSender);
-            return true;
-        }
+
 
         return false;
     }
