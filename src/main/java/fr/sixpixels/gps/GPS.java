@@ -6,6 +6,7 @@ import org.bukkit.*;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
@@ -17,9 +18,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 
 public final class GPS extends JavaPlugin {
     public static SpiGUI GUI;
@@ -103,6 +102,20 @@ public final class GPS extends JavaPlugin {
 
             String l = this.getLanguage().getString("DESTINATION_CREATED").replace("%destination%", name);
             p.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', getConfig().getString("prefix") + l)));
+        }
+    }
+
+    public void listDestinations(CommandSender sender) {
+        ConfigurationSection dests = getConfig().getConfigurationSection("destinations");
+        if (dests != null) {
+            Set<String> destinations = dests.getKeys(false);
+            String l = this.getLanguage().getString("DESTINATIONS_LIST");
+            sender.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', getConfig().getString("prefix") + l)));
+            for (String dest: destinations) {
+                sender.sendMessage(TextComponent.fromLegacyText(
+                        ChatColor.translateAlternateColorCodes('&', "&r&a" + dest + "&7 (" + Objects.requireNonNull(dests.getConfigurationSection(dest)).getString("world") + ")")
+                ));
+            }
         }
     }
 

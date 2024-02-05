@@ -56,6 +56,11 @@ public class GPSCommand implements CommandExecutor {
             }
         }
 
+        if (args[0].equalsIgnoreCase("list")) {
+            this.plugin.listDestinations(commandSender);
+            return true;
+        }
+
         return false;
     }
 

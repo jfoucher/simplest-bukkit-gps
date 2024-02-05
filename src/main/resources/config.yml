@@ -1,25 +1,12 @@
 language: 'fr_FR'
-prefix: '[GPS] '
+prefix: '&r&7[&l&bGPS&r&7] '
 destinations:
-  quests:
-    x: 70
-    y: 80
-    z: 70
-    world: lobby
-    world_desc: Spawn
-    material: CROSSBOW
-    name: Quêtes
-    description: Les quêtes journalières sont ici
-    message_start: Allons trouver une nouvelle quête
-    message_end: Vous êtes à destination. Parlez au PNJ pour voir vos quêtes
-
-
-  base:
+  first:
     x: 0
     y: 50
     z: 0
-    world: survie3
-    world_desc: Vallée paisible
-    material: JUNGLE_PLANKS
-    name: spawn vallée
-    description: LA vallée paisible
+    world: world
+    world_desc: Main world
+    material: JUNGLE_LOG
+    name: Jungle to get wood
+    description: This is place where you can easily get some wood

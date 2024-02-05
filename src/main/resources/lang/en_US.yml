@@ -7,3 +7,4 @@ ARRIVED_DESTINATION: You have arrived at &a&l%destination%
 DESTINATION_CREATED: Destination %destination% created here
 DESTINATION_ALREADY_EXISTS: '&r&7This destination already exists. Delete if first with &a/gps delete %destination%'
 DESTINATION_REMOVED: '&r&7Destination &a%destination%&r&7 deleted'
+DESTINATIONS_LIST: "Destinations"
