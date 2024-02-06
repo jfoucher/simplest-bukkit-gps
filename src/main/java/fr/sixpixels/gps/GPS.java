@@ -1,17 +1,13 @@
 package fr.sixpixels.gps;
 
 import com.samjakob.spigui.SpiGUI;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.*;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -40,6 +36,15 @@ public final class GPS extends JavaPlugin {
         if (cmd != null) {
             cmd.setExecutor(new GPSCommand(this));
         }
+    }
+
+    public void reload(CommandSender sender) {
+        this.reloadConfig();
+        sender.sendMessage(
+                LegacyComponentSerializer.legacyAmpersand().deserialize(
+                        getConfig().getString("prefix") + this.getLanguage().getString("PLUGIN_RELOADED")
+                )
+        );
 
     }
 
@@ -52,7 +57,17 @@ public final class GPS extends JavaPlugin {
 
         if (m != null) {
             String msg = m.replace("%destination%", f.destinationName);
-            player.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', msg)));
+            player.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(getConfig().getString("prefix") + msg));
+        }
+
+        Particle.DustOptions dustOptions = new Particle.DustOptions(Color.fromRGB(0, 127, 255), 1.5F);
+        Location dest = f.destination.clone();
+
+        dest.setY(dest.getY() + 0.5);
+        for (int i = -2; i < 3; i++) {
+            dest.setX(dest.getX() + 0.5 * (i % 2));
+            dest.setZ(dest.getZ() + 0.2 * (i));
+            player.spawnParticle(Particle.REDSTONE, f.destination, 50, dustOptions);
         }
 
         this.finders.remove(player.getUniqueId());
@@ -84,7 +99,7 @@ public final class GPS extends JavaPlugin {
             if (dests.getConfigurationSection(name) != null) {
                 String err = this.getLanguage().getString("DESTINATION_ALREADY_EXISTS");
                 if (err != null) {
-                    p.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes( '&', err.replace("%destination%", name))));
+                    p.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(err.replace("%destination%", name)));
                 }
                 return;
             }
@@ -99,9 +114,12 @@ public final class GPS extends JavaPlugin {
             d.set("material", material);
             getConfig().set("destinations." + name, d);
             saveConfig();
-
-            String l = this.getLanguage().getString("DESTINATION_CREATED").replace("%destination%", name);
-            p.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', getConfig().getString("prefix") + l)));
+            String ce = this.getLanguage().getString("DESTINATION_CREATED");
+            if (ce == null) {
+                ce = "Destination &d&l%destination% created here";
+            }
+            String l = ce.replace("%destination%", name);
+            p.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(getConfig().getString("prefix") + l));
         }
     }
 
@@ -110,10 +128,10 @@ public final class GPS extends JavaPlugin {
         if (dests != null) {
             Set<String> destinations = dests.getKeys(false);
             String l = this.getLanguage().getString("DESTINATIONS_LIST");
-            sender.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', getConfig().getString("prefix") + l)));
+            sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(getConfig().getString("prefix") + l));
             for (String dest: destinations) {
-                sender.sendMessage(TextComponent.fromLegacyText(
-                        ChatColor.translateAlternateColorCodes('&', "&r&a" + dest + "&7 (" + Objects.requireNonNull(dests.getConfigurationSection(dest)).getString("world") + ")")
+                sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(
+                        "&r&a" + dest + "&7 (" + Objects.requireNonNull(dests.getConfigurationSection(dest)).getString("world") + ")"
                 ));
             }
         }
@@ -126,8 +144,12 @@ public final class GPS extends JavaPlugin {
             if (d != null) {
                 getConfig().set("destinations."+name, null);
                 saveConfig();
-                String l = this.getLanguage().getString("DESTINATION_REMOVED").replace("%destination%", name);
-                p.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', getConfig().getString("prefix") + l)));
+                String de = this.getLanguage().getString("DESTINATION_REMOVED");
+                if (de == null) {
+                    de = "Destination &d&l%destination% was removed";
+                }
+                String l = de.replace("%destination%", name);
+                p.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(getConfig().getString("prefix") + l));
             } else {
                 p.sendMessage(getConfig().getString("prefix") + " quest does not exist");
             }
@@ -169,7 +191,7 @@ public final class GPS extends JavaPlugin {
         try {
             this.language.load(langFile);
         } catch (IOException | InvalidConfigurationException e) {
-            e.printStackTrace();
+            Bukkit.getLogger().warning("Could not load language file for language " + lang);
         }
     }
 }

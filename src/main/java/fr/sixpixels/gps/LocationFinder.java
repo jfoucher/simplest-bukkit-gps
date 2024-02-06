@@ -1,5 +1,7 @@
 package fr.sixpixels.gps;
 
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.npc.NPC;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
@@ -7,16 +9,16 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
-
-import java.util.UUID;
 
 public class LocationFinder {
     public Player player;
 
-    private GPS plugin;
+    private final GPS plugin;
     public Location destination;
 
     public Location start;
@@ -27,18 +29,35 @@ public class LocationFinder {
 
     public BukkitTask actionBarTask;
 
+    public NPC npc;
+
     public LocationFinder(Player player, Location loc, String name, GPS plugin) {
         this.plugin = plugin;
         this.player = player;
         this.destination = loc;
         this.destinationName = name;
         this.start = player.getLocation();
+        if (CitizensAPI.hasImplementation()) {
+            Bukkit.getLogger().info("[GPS] adding helper NPC");
+            this.npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.BEE, "GPS");
+            //unit vector pointing to destination
+            Vector dir = this.destination.toVector().subtract(player.getLocation().toVector()).normalize();
+            // Vector a few blocks away
+            Vector dist = dir.multiply(4).add(player.getLocation().toVector());
+            Location newLoc = dist.toLocation(player.getWorld());
+            this.npc.spawn(newLoc);
+
+            Bukkit.getScheduler().runTaskLater(this.plugin, this::forwardNPC, 10L);
+        }
+
+
         this.bar = BossBar.bossBar(Component.text(""), 1.0f, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
     }
 
     public void addBossbar() {
         Component title = this.title();
         this.bar = BossBar.bossBar(title, this.progress(), BossBar.Color.RED, BossBar.Overlay.PROGRESS);
+
 
         player.showBossBar(bar);
     }
@@ -48,6 +67,33 @@ public class LocationFinder {
         // This should be our bossbar
         bar.name(this.title());
         bar.progress(this.progress());
+
+        Bukkit.getScheduler().runTaskLater(this.plugin, this::forwardNPC, 2L);
+
+    }
+
+    private void forwardNPC() {
+        if (npc != null && npc.isSpawned() && npc.getNavigator().isNavigating() && this.npc.getEntity().getLocation().distance(player.getLocation()) > 10) {
+            this.npc.getNavigator().cancelNavigation();
+            Vector dir = this.destination.toVector().subtract(player.getLocation().toVector()).normalize();
+            // Vector a few blocks away
+            Vector dist = dir.multiply(4).add(player.getLocation().toVector());
+            Location newLoc = dist.toLocation(player.getWorld());
+            this.npc.teleport(newLoc, PlayerTeleportEvent.TeleportCause.UNKNOWN);
+
+
+        }
+        if (npc != null && npc.isSpawned() && !npc.getNavigator().isNavigating()) {
+
+            //unit vector pointing to destination
+            Vector dir = this.destination.toVector().subtract(player.getLocation().toVector()).normalize();
+            // Vector a few blocks away
+            Vector dist = dir.multiply(8).add(player.getLocation().toVector());
+            Location newLoc = dist.toLocation(player.getWorld());
+
+            this.npc.getNavigator().setTarget(newLoc);
+
+        }
     }
 
     public Component title() {
@@ -102,9 +148,11 @@ public class LocationFinder {
             if (this.actionBarTask != null) {
                 this.actionBarTask.cancel();
             }
-
+            this.npc.despawn();
+            this.npc.destroy();
             player.hideBossBar(this.bar);
             this.plugin.arrived(player);
+
         }
         float p = (float)dist / (float)orig;
         if (p < 0.1f) {

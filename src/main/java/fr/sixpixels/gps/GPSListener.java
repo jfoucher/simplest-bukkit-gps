@@ -4,7 +4,10 @@ package fr.sixpixels.gps;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 public class GPSListener implements Listener {
     public GPS plugin;
@@ -22,5 +25,29 @@ public class GPSListener implements Listener {
             }
 
         //}
+    }
+    @EventHandler
+    public void onPlayerDead(PlayerDeathEvent e) {
+        removeGps(e.getPlayer());
+
+    }
+
+    private void removeGps(Player p) {
+        LocationFinder finder = this.plugin.finders.get(p.getUniqueId());
+        if (finder != null) {
+            finder.npc.despawn();
+            finder.npc.destroy();
+            this.plugin.finders.remove(p.getUniqueId());
+        }
+    }
+
+    @EventHandler
+    public void onPlayerKick(PlayerKickEvent e) {
+        removeGps(e.getPlayer());
+
+    }
+    @EventHandler
+    public void onPlayerDisconnect(PlayerQuitEvent e) {
+        removeGps(e.getPlayer());
     }
 }

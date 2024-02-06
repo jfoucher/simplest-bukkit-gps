@@ -1,5 +1,5 @@
 MAIN_MENU_TITLE: Où voulez-vous aller ?
-DEFAULT_MESSAGE_START: C'est parti !
+DEFAULT_MESSAGE_START: '&bC''est parti !&7 Faites &b/gps &7 si vous voulez arrêter le GPS'
 WRONG_WORLD_MESSAGE: Vous êtes dans le mauvais monde, vous devez aller dans le monde "%world%" puis relancer le GPS.
 WORLD_COLON: 'monde :'
 GO_TO_WORLD: Allez déjà dans le monde
@@ -8,3 +8,4 @@ DESTINATION_CREATED: '&r&7Destination &a&l%destination% &r&7créée à cet endro
 DESTINATION_ALREADY_EXISTS: '&r&7Cette destination existe déjà. Supprimez la d''abord avec &a/gps delete %destination%'
 DESTINATION_REMOVED: '&r&7Destination &a%destination%&r&7 supprimée'
 DESTINATIONS_LIST: "&l&aDestinations"
+PLUGIN_RELOADED: "&l&aConfiguration rechargée"
