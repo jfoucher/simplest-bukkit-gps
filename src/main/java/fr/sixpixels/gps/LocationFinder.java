@@ -2,6 +2,7 @@ package fr.sixpixels.gps;
 
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
+import net.citizensnpcs.trait.LookClose;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
@@ -40,6 +41,10 @@ public class LocationFinder {
         if (CitizensAPI.hasImplementation()) {
             Bukkit.getLogger().info("[GPS] adding helper NPC");
             this.npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.BEE, "GPS");
+
+            npc.getOrAddTrait(LookClose.class).setRange(10);
+            npc.getOrAddTrait(LookClose.class).setDisableWhileNavigating(true);
+            npc.getOrAddTrait(LookClose.class).lookClose(true);
             //unit vector pointing to destination
             Vector dir = this.destination.toVector().subtract(player.getLocation().toVector()).normalize();
             // Vector a few blocks away

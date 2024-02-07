@@ -1,7 +1,9 @@
 package fr.sixpixels.gps;
 
 import com.samjakob.spigui.SpiGUI;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
@@ -14,6 +16,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 
 public final class GPS extends JavaPlugin {
@@ -40,6 +43,7 @@ public final class GPS extends JavaPlugin {
 
     public void reload(CommandSender sender) {
         this.reloadConfig();
+        this.loadLanguageFile();
         sender.sendMessage(
                 LegacyComponentSerializer.legacyAmpersand().deserialize(
                         getConfig().getString("prefix") + this.getLanguage().getString("PLUGIN_RELOADED")
@@ -70,6 +74,23 @@ public final class GPS extends JavaPlugin {
             player.spawnParticle(Particle.REDSTONE, f.destination, 50, dustOptions);
         }
 
+        String ti = this.getLanguage().getString("END_TITLE");
+        if (ti == null) {
+            ti = "GPS active";
+        }
+        String sti = this.getLanguage().getString("END_SUBTITLE");
+        if (sti == null) {
+            sti = "Destination %destination%";
+        }
+
+        sti = sti.replace("%destination%", f.destinationName);
+        Component t = LegacyComponentSerializer.legacyAmpersand().deserialize(ti);
+        Component st = LegacyComponentSerializer.legacyAmpersand().deserialize(sti);
+        final Title.Times times = Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(3000), Duration.ofMillis(500));
+        final Title title = Title.title(t, st, times);
+
+        player.showTitle(title);
+
         this.finders.remove(player.getUniqueId());
     }
 
@@ -90,7 +111,7 @@ public final class GPS extends JavaPlugin {
 
         if (args.length > 3) {
             String[] ss = Arrays.copyOfRange(args, 3, args.length);
-            description = String.join(" ", ss);;
+            description = String.join(" ", ss);
         }
 
 

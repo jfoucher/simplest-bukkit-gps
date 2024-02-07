@@ -3,7 +3,9 @@ package fr.sixpixels.gps;
 import com.samjakob.spigui.buttons.SGButton;
 import com.samjakob.spigui.item.ItemBuilder;
 import com.samjakob.spigui.menu.SGMenu;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.title.Title;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -18,6 +20,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.logging.Level;
@@ -112,6 +115,39 @@ public class GPSCommand implements CommandExecutor {
                     // check if we are on the correct world
                     if (player.getWorld().getName().equals(dest.getString("world"))) {
 
+                        String destName = dest.getString("name");
+                        if (destName == null) {
+                            destName = destination;
+                        }
+
+                        if (this.plugin.finders.get(player.getUniqueId()) != null) {
+                            LocationFinder old = this.plugin.finders.get(player.getUniqueId());
+                            if (old.npc != null) {
+                                old.npc.despawn();
+                                old.npc.destroy();
+                            }
+                            player.hideBossBar(old.bar);
+                            this.plugin.finders.remove(player.getUniqueId());
+                        }
+
+                        Bukkit.getLogger().info("[GPS] " + player.getName() + " set GPS to " + destName);
+                        // trigger GPS
+                        // get destination point
+
+                        Location loc = new Location(player.getWorld(), (float)dest.getInt("x"), (float)dest.getInt("y"), (float)dest.getInt("z"));
+                        if (player.getLocation().distance(loc) <= 2) {
+                            Bukkit.getLogger().info("[GPS] " + player.getName() + "is already at destination");
+                            String mm = t("ALREADY_AT_DESTINATION_MESSAGE");
+                            if (mm == null) {
+                                mm = "You already are at your destination";
+                            }
+                            event.getWhoClicked().sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(mm));
+                            event.getInventory().close();
+                            return;
+                        }
+                        LocationFinder finder = new LocationFinder(player, loc, destName, this.plugin);
+                        this.plugin.finders.put(player.getUniqueId(), finder);
+
                         String msg = dest.getString("message_start");
                         if (msg == null) {
                             msg = t("DEFAULT_MESSAGE_START");
@@ -121,19 +157,29 @@ public class GPSCommand implements CommandExecutor {
                         }
                         event.getWhoClicked().sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(msg));
 
-                        Bukkit.getLogger().info("[GPS] " + player.getName() + " set GPS to " + dest.getString("name"));
-                        // trigger GPS
-                        // get destination point
-                        String destName = dest.getString("name");
-                        Location loc = new Location(player.getWorld(), (float)dest.getInt("x"), (float)dest.getInt("y"), (float)dest.getInt("z"));
-                        LocationFinder finder = new LocationFinder(player, loc, destName, this.plugin);
-                        this.plugin.finders.put(player.getUniqueId(), finder);
                         // create bossbar
                         finder.addBossbar();
+                        String ti = t("START_TITLE");
+                        if (ti == null) {
+                            ti = "GPS active";
+                        }
+                        String sti = t("START_SUBTITLE");
+                        if (sti == null) {
+                            sti = "Destination %destination%";
+                        }
+                        sti = sti.replace("%destination%", destName);
+                        Component t = LegacyComponentSerializer.legacyAmpersand().deserialize(ti);
+                        Component st = LegacyComponentSerializer.legacyAmpersand().deserialize(sti);
+                        final Title.Times times = Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(3000), Duration.ofMillis(500));
+                        final Title title = Title.title(t, st, times);
+
+                        player.showTitle(title);
+
+                        String abDest = destName;
 
                         finder.actionBarTask = Bukkit.getScheduler().runTaskTimer(this.plugin, () -> {
-                            String message = "Direction: §6§l" + destName;
-                            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(message));
+                            String message = "Direction: &6&l" + abDest;
+                            player.sendActionBar(LegacyComponentSerializer.legacyAmpersand().deserialize(message));
                         }, 0, 20L*2);
 
                         // Close inventory

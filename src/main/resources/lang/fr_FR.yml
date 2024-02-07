@@ -1,5 +1,10 @@
 MAIN_MENU_TITLE: Où voulez-vous aller ?
 DEFAULT_MESSAGE_START: '&bC''est parti !&7 Faites &b/gps &7 si vous voulez arrêter le GPS'
+ALREADY_AT_DESTINATION_MESSAGE: '&bVous êtes déjà à votre destination'
+START_TITLE: '&2GPS activé'
+START_SUBTITLE: 'Direction &l&6%destination%. &r&c/gps &r pour annuler'
+END_TITLE: '&2GPS désactivé'
+END_SUBTITLE: 'Vous êtes à &l&6%destination%'
 WRONG_WORLD_MESSAGE: Vous êtes dans le mauvais monde, vous devez aller dans le monde "%world%" puis relancer le GPS.
 WORLD_COLON: 'monde :'
 GO_TO_WORLD: Allez déjà dans le monde
