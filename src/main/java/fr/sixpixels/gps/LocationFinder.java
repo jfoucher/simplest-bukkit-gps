@@ -3,18 +3,23 @@ package fr.sixpixels.gps;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.trait.LookClose;
+import net.citizensnpcs.trait.ScoreboardTrait;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
 
 public class LocationFinder {
     public Player player;
@@ -28,6 +33,8 @@ public class LocationFinder {
 
     public BossBar bar;
 
+    public List<Location> npcPath;
+
     public BukkitTask actionBarTask;
 
     public NPC npc;
@@ -37,26 +44,65 @@ public class LocationFinder {
         this.player = player;
         this.destination = loc;
         this.destinationName = name;
+        this.npcPath = new ArrayList<>();
         this.start = player.getLocation();
         if (CitizensAPI.hasImplementation()) {
-            Bukkit.getLogger().info("[GPS] adding helper NPC");
+
+            Bukkit.getLogger().log(Level.FINEST, "[GPS] adding helper NPC");
             this.npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.BEE, "GPS");
 
             npc.getOrAddTrait(LookClose.class).setRange(10);
             npc.getOrAddTrait(LookClose.class).setDisableWhileNavigating(true);
             npc.getOrAddTrait(LookClose.class).lookClose(true);
-            //unit vector pointing to destination
-            Vector dir = this.destination.toVector().subtract(player.getLocation().toVector()).normalize();
-            // Vector a few blocks away
-            Vector dist = dir.multiply(4).add(player.getLocation().toVector());
-            Location newLoc = dist.toLocation(player.getWorld());
-            this.npc.spawn(newLoc);
+            npc.getOrAddTrait(ScoreboardTrait.class).setColor(ChatColor.GOLD);
 
-            Bukkit.getScheduler().runTaskLater(this.plugin, this::forwardNPC, 10L);
+            this.npc.spawn(player.getLocation());
+
+            Bukkit.getLogger().info("[GPS] npc spawned " + this.npc.isSpawned());
+            Bukkit.getScheduler().runTaskLaterAsynchronously(this.plugin, () -> {
+                if (this.npc != null && this.npc.isSpawned()) {
+                    this.npc.getEntity().setGlowing(true);
+
+                    Location ll = player.getLocation().toCenterLocation();
+                    ll.add(0, -1, 0);
+                    this.npcPath = Pathfinding.findPath(ll, this.destination);
+                    Bukkit.getLogger().log(Level.FINEST, "[GPS] generated path with " + this.npcPath.size() + " locations");
+
+                    if (!this.npcPath.isEmpty()) {
+                        Bukkit.getScheduler().runTaskLater(this.plugin, () -> {
+                            Bukkit.getLogger().log(Level.FINEST, "[GPS] Setting NPC target to " + this.npcPath.get(0));
+
+                            this.npc.getNavigator().setTarget(this.npcPath.get(0));
+                            this.npcPath.remove(0);
+                        }, 2L);
+
+
+                    } else {
+                        Bukkit.getScheduler().runTaskLater(this.plugin, () -> {
+                            this.npc.despawn();
+                            this.npc.destroy();
+                        }, 2L);
+                    }
+                }
+            }, 2L);
         }
 
 
         this.bar = BossBar.bossBar(Component.text(""), 1.0f, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
+    }
+
+    private void forwardNPC() {
+        if (npc != null && npc.isSpawned() && !npc.getNavigator().isNavigating() && this.npc.getEntity().getLocation().distanceSquared(player.getLocation()) < 80) {
+            if (!this.npcPath.isEmpty()) {
+                this.npc.getNavigator().setTarget(this.npcPath.get(0));
+                Bukkit.getLogger().log(Level.FINEST, "distance left " + this.npcPath.get(0).distance(this.destination));
+
+                this.npcPath.remove(0);
+                Bukkit.getLogger().log(Level.FINEST, "[GPS] " + this.npcPath.size() + " path locations remaining");
+            } else {
+                this.npc.getNavigator().setTarget(this.destination);
+            }
+        }
     }
 
     public void addBossbar() {
@@ -77,29 +123,7 @@ public class LocationFinder {
 
     }
 
-    private void forwardNPC() {
-        if (npc != null && npc.isSpawned() && npc.getNavigator().isNavigating() && this.npc.getEntity().getLocation().distance(player.getLocation()) > 10) {
-            this.npc.getNavigator().cancelNavigation();
-            Vector dir = this.destination.toVector().subtract(player.getLocation().toVector()).normalize();
-            // Vector a few blocks away
-            Vector dist = dir.multiply(4).add(player.getLocation().toVector());
-            Location newLoc = dist.toLocation(player.getWorld());
-            this.npc.teleport(newLoc, PlayerTeleportEvent.TeleportCause.UNKNOWN);
 
-
-        }
-        if (npc != null && npc.isSpawned() && !npc.getNavigator().isNavigating()) {
-
-            //unit vector pointing to destination
-            Vector dir = this.destination.toVector().subtract(player.getLocation().toVector()).normalize();
-            // Vector a few blocks away
-            Vector dist = dir.multiply(8).add(player.getLocation().toVector());
-            Location newLoc = dist.toLocation(player.getWorld());
-
-            this.npc.getNavigator().setTarget(newLoc);
-
-        }
-    }
 
     public Component title() {
         Location ploc = player.getLocation();
@@ -153,8 +177,14 @@ public class LocationFinder {
             if (this.actionBarTask != null) {
                 this.actionBarTask.cancel();
             }
-            this.npc.despawn();
-            this.npc.destroy();
+            if (this.npc != null) {
+                if (this.npc.isSpawned()) {
+                    this.npc.despawn();
+                }
+
+                this.npc.destroy();
+            }
+
             player.hideBossBar(this.bar);
             this.plugin.arrived(player);
 

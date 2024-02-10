@@ -35,8 +35,14 @@ public class GPSListener implements Listener {
     private void removeGps(Player p) {
         LocationFinder finder = this.plugin.finders.get(p.getUniqueId());
         if (finder != null) {
-            finder.npc.despawn();
-            finder.npc.destroy();
+            if (finder.npc != null) {
+                if (finder.npc.isSpawned()) {
+                    finder.npc.despawn();
+                }
+
+                finder.npc.destroy();
+            }
+
             this.plugin.finders.remove(p.getUniqueId());
         }
     }

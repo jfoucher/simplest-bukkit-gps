@@ -49,6 +49,25 @@ public final class GPS extends JavaPlugin {
                         getConfig().getString("prefix") + this.getLanguage().getString("PLUGIN_RELOADED")
                 )
         );
+    }
+
+    public void stopNavigation(Player player) {
+        LocationFinder old = this.finders.get(player.getUniqueId());
+        if (old != null) {
+            if (old.npc != null) {
+                if (old.npc.isSpawned()) {
+                    old.npc.despawn();
+                }
+
+                old.npc.destroy();
+            }
+            player.hideBossBar(old.bar);
+            if (old.actionBarTask != null) {
+                old.actionBarTask.cancel();
+            }
+
+            this.finders.remove(player.getUniqueId());
+        }
 
     }
 
@@ -62,16 +81,6 @@ public final class GPS extends JavaPlugin {
         if (m != null) {
             String msg = m.replace("%destination%", f.destinationName);
             player.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(getConfig().getString("prefix") + msg));
-        }
-
-        Particle.DustOptions dustOptions = new Particle.DustOptions(Color.fromRGB(0, 127, 255), 1.5F);
-        Location dest = f.destination.clone();
-
-        dest.setY(dest.getY() + 0.5);
-        for (int i = -2; i < 3; i++) {
-            dest.setX(dest.getX() + 0.5 * (i % 2));
-            dest.setZ(dest.getZ() + 0.2 * (i));
-            player.spawnParticle(Particle.REDSTONE, f.destination, 50, dustOptions);
         }
 
         String ti = this.getLanguage().getString("END_TITLE");
@@ -172,7 +181,7 @@ public final class GPS extends JavaPlugin {
                 String l = de.replace("%destination%", name);
                 p.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(getConfig().getString("prefix") + l));
             } else {
-                p.sendMessage(getConfig().getString("prefix") + " quest does not exist");
+                p.sendMessage(getConfig().getString("prefix") + " destination does not exist");
             }
 
 
@@ -182,6 +191,14 @@ public final class GPS extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+        for (LocationFinder f: this.finders.values()) {
+            if (f.npc != null) {
+                if (f.npc.isSpawned()) {
+                    f.npc.despawn();
+                }
+                f.npc.destroy();;
+            }
+        }
     }
 
 

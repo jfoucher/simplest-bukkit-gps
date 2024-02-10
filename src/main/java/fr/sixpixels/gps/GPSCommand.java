@@ -8,9 +8,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.title.Title;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -76,7 +74,7 @@ public class GPSCommand implements CommandExecutor {
 
     private void openMainMenu(Player player) {
         // Create a GUI with 3 rows (27 slots)
-        Bukkit.getLogger().log(Level.FINER, "[GPS] Opening menu " + t("MAIN_MENU_TITLE"));
+
         SGMenu mainMenu = GPS.GUI.create(t("MAIN_MENU_TITLE"), 3);
 
         ConfigurationSection destinations = this.plugin.getConfig().getConfigurationSection("destinations");
@@ -121,13 +119,9 @@ public class GPSCommand implements CommandExecutor {
                         }
 
                         if (this.plugin.finders.get(player.getUniqueId()) != null) {
-                            LocationFinder old = this.plugin.finders.get(player.getUniqueId());
-                            if (old.npc != null) {
-                                old.npc.despawn();
-                                old.npc.destroy();
-                            }
-                            player.hideBossBar(old.bar);
-                            this.plugin.finders.remove(player.getUniqueId());
+                            this.plugin.stopNavigation(player);
+                        } else {
+                            Bukkit.getLogger().warning("[GPS] player finder is NULL");
                         }
 
                         Bukkit.getLogger().info("[GPS] " + player.getName() + " set GPS to " + destName);
@@ -180,6 +174,13 @@ public class GPSCommand implements CommandExecutor {
                         finder.actionBarTask = Bukkit.getScheduler().runTaskTimer(this.plugin, () -> {
                             String message = "Direction: &6&l" + abDest;
                             player.sendActionBar(LegacyComponentSerializer.legacyAmpersand().deserialize(message));
+
+                            Particle.DustOptions dustOptions = new Particle.DustOptions(Color.fromRGB(0, 127, 255), 1.5F);
+                            Location part = loc.clone();
+
+                            part.setY(part.getY() + 0.6);
+                            player.spawnParticle(Particle.REDSTONE, part, 50, dustOptions);
+
                         }, 0, 20L*2);
 
                         // Close inventory
@@ -199,25 +200,9 @@ public class GPSCommand implements CommandExecutor {
                             .lore("Fermer le GPS")
                             .build()
             ).withListener((InventoryClickEvent event) -> {
-                // Events are cancelled automatically, unless you turn it off
-                // for your plugin or for this inventory.
-                LocationFinder f = this.plugin.finders.get(player.getUniqueId());
-                if (f != null) {
-                    if (f.npc != null) {
-                        if (f.npc.isSpawned()) {
-                            f.npc.despawn();
-                        }
-                        f.npc.destroy();
-                    }
-                    if (f.actionBarTask != null) {
-                        f.actionBarTask.cancel();
-                    }
+                this.plugin.stopNavigation(player);
+                event.getInventory().close();
 
-                    player.hideBossBar(f.bar);
-                    this.plugin.finders.remove(player.getUniqueId());
-                    // Close inventory
-                    event.getInventory().close();
-                }
             });
 
             // Only show this button if GPS is active, and put it in last slot with setButton
